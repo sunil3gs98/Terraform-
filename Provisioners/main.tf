@@ -8,16 +8,16 @@ resource "aws_security_group_rule" "http" {
   to_port           = 80
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = "sg-03fd4d0b1ef616bb4"
+  security_group_id = "sg-03fd4d0bxxx"
 }
 
 resource "aws_instance" "Provisioners_Test" {
     ami = "ami-0ecb62995f68bb549"
-    subnet_id = "subnet-03f58cc8a831d0f3b"
+    subnet_id = "subnet-03f58cxxxxxx"
     instance_type = "t2.micro"
     associate_public_ip_address = true 
-    vpc_security_group_ids = ["sg-03fd4d0b1ef616bb4"]
-    key_name               = "Linus"
+    vpc_security_group_ids = ["sg-03fd4d0rtgfrxxxxxx"]
+    key_name               = "l"
     tags = {
       name="Provisioners"
     }
@@ -25,7 +25,7 @@ resource "aws_instance" "Provisioners_Test" {
     connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("/Users/sunil3gs98/.ssh/Linus.pem")
+    private_key = file("/Users/path/.ssh/l.pem")
     host        = self.public_ip
   }
 
