@@ -1,78 +1,70 @@
-resource "aws_vpc" "Test"{
-
-cidr_block="10.0.0.1/16"
-
-tags={
-
-Name="Provisioners_VPC"
+resource "aws_vpc" "Test" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "Provisioners_VPC"
+  }
 }
 
+resource "aws_subnet" "Test1" {
+  vpc_id                  = aws_vpc.Test.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a" 
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Provisioners_subnet"
+  }
 }
 
-
-resource "aws_subnet" "Test1"{
-
-vpc_id =aws_vpc.Test.id
-cidr_block="10.0.0.1/24"
-availability_zone="us-east-1"
-map_public_ip_on_launch=true
-
-
-tags={
-Name="Provisioners_subnet"
-}
+resource "aws_internet_gateway" "Pgateway" {
+  vpc_id = aws_vpc.Test.id
+  tags = {
+    Name = "Provisioners_gate"
+  }
 }
 
-resource "aws_internet_gateway" "Pgateway"{
-vpc_id=aws.vpc.Test.id
-tags={
-Name="Provisioners_gate"
-}
-}
-
-resource "aws_route_table" Proute_table"{
-vpc_id=aws.vpc.Test.id
-route{
-cidr_block="0.0.0.0/0"
-gateway_id = aws_internet_gateway.Pgateway.id
-}
+resource "aws_route_table" "Proute_table" {
+  vpc_id = aws_vpc.Test.id 
+  
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.Pgateway.id
+  }
 }
 
-resource "aws_route_table_association" "Passociation"{
-subnet_id=aws_subnet.Test1.id
-route_table_id =aws_route_table.Proutetabel.id
+resource "aws_route_table_association" "Passociation" {
+  subnet_id      = aws_subnet.Test1.id
+  route_table_id = aws_route_table.Proute_table.id 
 }
 
+resource "aws_security_group" "Psecurity" {
+  vpc_id = aws_vpc.Test.id 
 
-resource "aws_security_group" "Psecurity"{
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-vpc_id=aws.vpc.Test.id
+  ingress {
+    description = "ssh"
+    from_port   = 22
+    to_port     = 22 
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
 
-ingress{
-from_port =80
-to_port= 80
-protocol= "tcp"
-cidr_blocks =["0.0.0.0/0"]
-}
+  egress {
+    from_port   = 0
+    to_port     = 0 
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
 
-ingress{
-description ="ssh"
-from_port=22
-tp_port=80
-protcol="tcp"
-cidr_block=["0.0.0.0/0"]
-}
-
-egress{
-from_port=0
-t_port=0
-protocol ="-1"
-cdir_blocks=["0.0.0.0/0"]
-}
-
-tags{
-Name=  "Provisionerroue_association"
-}
+  tags = { # Fixed: added = and { }
+    Name = "Provisioner_SG"
+  }
 }
 
 
