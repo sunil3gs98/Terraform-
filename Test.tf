@@ -1,3 +1,4 @@
+
 resource "aws_vpc" "Test" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -67,11 +68,39 @@ resource "aws_security_group" "Psecurity" {
   }
 }
 
+resource "aws_key_pair" "terraform_key" {
+  key_name   = "terraform-key"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+
 
 resource "aws_instance" "server" {
   ami                    = "ami-0261755bbcb8c4a84"
   instance_type          = "t2.micro"
-  key_name      = aws_key_pair.example.key_name
-  vpc_security_group_ids = [aws_security_group.Psecurity.id]
   subnet_id              = aws_subnet.Test1.id
+  vpc_security_group_ids = [aws_security_group.Psecurity.id]
+
+  key_name = aws_key_pair.terraform_key.key_name
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/id_rsa")
+    host        = self.public_ip
+  }
+
+  provisioner "file" {
+    source      = "app.py"
+    destination = "/home/ubuntu/app.py"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update -y",
+      "sudo apt install -y python3-pip",
+      "pip3 install flask",
+      "python3 /home/ubuntu/app.py &"
+    ]
+  }
 }
