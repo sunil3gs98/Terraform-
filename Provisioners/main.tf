@@ -1,46 +1,112 @@
+
 provider "aws" {
     region = "us-east-1"    
   
 }
-resource "aws_security_group_rule" "http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = "sg-03fd4d0bxxx"
+
+resource "aws_vpc" "Test" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "Provisioners_VPC"
+  }
 }
 
-resource "aws_instance" "Provisioners_Test" {
-    ami = "ami-0ecb62995f68bb549"
-    subnet_id = "subnet-03f58cxxxxxx"
-    instance_type = "t2.micro"
-    associate_public_ip_address = true 
-    vpc_security_group_ids = ["sg-03fd4d0rtgfrxxxxxx"]
-    key_name               = "l"
-    tags = {
-      name="Provisioners"
-    }
+resource "aws_subnet" "Test1" {
+  vpc_id                  = aws_vpc.Test.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a" 
+  map_public_ip_on_launch = true
 
-    connection {
+  tags = {
+    Name = "Provisioners_subnet"
+  }
+}
+
+resource "aws_internet_gateway" "Pgateway" {
+  vpc_id = aws_vpc.Test.id
+  tags = {
+    Name = "Provisioners_gate"
+  }
+}
+
+resource "aws_route_table" "Proute_table" {
+  vpc_id = aws_vpc.Test.id 
+  
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.Pgateway.id
+  }
+}
+
+resource "aws_route_table_association" "Passociation" {
+  subnet_id      = aws_subnet.Test1.id
+  route_table_id = aws_route_table.Proute_table.id 
+}
+
+resource "aws_security_group" "Psecurity" {
+  vpc_id = aws_vpc.Test.id 
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "ssh"
+    from_port   = 22
+    to_port     = 22 
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0 
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  tags = { 
+    Name = "Provisioner_SG"
+  }
+}
+
+resource "aws_key_pair" "terraform_key" {
+  key_name   = "terraform-key"
+  /*private_key = file("/Users/sunil3gs98/.ssh/Linus.pem")*/
+  public_key = file("/Users/sunil3gs98/.ssh/Linus.pub")
+}
+
+
+
+resource "aws_instance" "server" {
+  ami                    = "ami-0261755bbcb8c4a84"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.Test1.id
+  vpc_security_group_ids = [aws_security_group.Psecurity.id]
+
+  key_name = aws_key_pair.terraform_key.key_name
+
+  connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("/Users/path/.ssh/l.pem")
+    private_key = file("/Users/sunil3gs98/.ssh/Linus.pem")
     host        = self.public_ip
   }
 
-    provisioner "file" {
-      source = "app.py"
-      destination = "/home/ubuntu/app.py"
-    }
-   provisioner "remote-exec" {
+  provisioner "file" {
+    source      = "app.py"
+    destination = "/home/ubuntu/app.py"
+  }
+
+  provisioner "remote-exec" {
     inline = [
       "sudo apt update -y",
       "sudo apt install -y python3-pip",
-      "sudo pip3 install flask",
-      "sudo python3 /home/ubuntu/app.py &"
+      "pip3 install flask",
+      "python3 /home/ubuntu/app.py &"
     ]
   }
-  
 }
-
