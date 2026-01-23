@@ -1,3 +1,3 @@
 output "instance" {
-    value = aws_instance.Provisioners_Test.public_ip
+    value = aws_instance.server.public_ip
 }
