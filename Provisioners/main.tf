@@ -75,14 +75,13 @@ resource "aws_security_group" "Psecurity" {
 
 resource "aws_key_pair" "terraform_key" {
   key_name   = "terraform-key"
-  /*private_key = file("/Users/sunil3gs98/.ssh/Linus.pem")*/
   public_key = file("/Users/sunil3gs98/.ssh/Linus.pub")
 }
 
 
 
 resource "aws_instance" "server" {
-  ami                    = "ami-0261755bbcb8c4a84"
+  ami                    = "ami-0261755bbcbxxxxxx"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.Test1.id
   vpc_security_group_ids = [aws_security_group.Psecurity.id]
